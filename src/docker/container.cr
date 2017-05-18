@@ -37,6 +37,10 @@ module Docker
       end
     end
 
+    def build
+      handle_response Docker.client.post("/build")
+    end
+
     def start
       handle_response Docker.client.post("/containers/#{id}/start")
     end
@@ -51,6 +55,10 @@ module Docker
 
     def kill
       handle_response Docker.client.post("/containers/#{id}/kill")
+    end
+    
+    def remove
+      handle_response Docker.client.delete("/containers/#{id}")
     end
 
     private def handle_response(res)
