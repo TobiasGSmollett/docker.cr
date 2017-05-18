@@ -36,9 +36,17 @@ module Docker
         end
       end
     end
-
-    def build
-      handle_response Docker.client.post("/build")
+    
+    def self.create(image_name)
+      Docker.client.post(
+        path: "/containers/create", 
+        headers: HTTP::Headers{"Content-Type" => "application/json"},
+        body: "{  \"AttachStdin\" : false,
+                  \"AttachStdout\" : true,
+                  \"AttachStderr\" : true,
+                  \"Tty\" : true,
+                  \"Image\" : \"#{image_name}\"
+        }")
     end
 
     def start
@@ -59,6 +67,28 @@ module Docker
     
     def remove
       handle_response Docker.client.delete("/containers/#{id}")
+    end
+
+    def exec(*commands)
+      handle_response (response = Docker.client.post(
+        path: "/containers/#{id}/exec", 
+        headers: HTTP::Headers{"Content-Type" => "application/json"},
+        body: "{  \"AttachStdin\" : false,
+                  \"AttachStdout\" : true,
+                  \"AttachStderr\" : true,
+                  \"Tty\" : true,
+                  \"Cmd\" : #{commands.to_a.to_s}
+                }")
+        )
+      
+      exec_id = JSON.parse(response.body)["Id"] 
+      
+      handle_response (result = Docker.client.post(
+        "/exec/#{exec_id}/start",
+        headers: HTTP::Headers{"Content-Type" => "application/json"},
+        body: "{\"Detach\":false, \"Tty\":true}"
+      ))
+      result.body
     end
 
     private def handle_response(res)
