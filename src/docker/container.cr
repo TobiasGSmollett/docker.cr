@@ -15,7 +15,7 @@ module Docker
       size_root_fs: {key: "SizeRootFs", nilable: true, type: Int32},
       network_settings: {key: "NetworkSettings", nilable: true, type: Hash(String, JSON::Any)},
     })
-  
+
     def logs(follow = true, stdout = true, stderr = true, since = 0, timestamps = false)
       params = HTTP::Params.build do |qs|
         qs.add "follow", follow.to_s
@@ -36,15 +36,15 @@ module Docker
         end
       end
     end
-    
+
     def self.create(image_name)
       Docker.client.post(
-        path: "/containers/create", 
+        path: "/containers/create",
         headers: HTTP::Headers{"Content-Type" => "application/json"},
         body: "{  \"AttachStdin\" : false,
                   \"AttachStdout\" : true,
                   \"AttachStderr\" : true,
-                  \"Tty\" : true,
+                  \"Tty\" : false,
                   \"Image\" : \"#{image_name}\"
         }")
     end
@@ -64,14 +64,14 @@ module Docker
     def kill
       handle_response Docker.client.post("/containers/#{id}/kill")
     end
-    
+
     def remove
       handle_response Docker.client.delete("/containers/#{id}")
     end
 
     def exec(*commands)
       handle_response (response = Docker.client.post(
-        path: "/containers/#{id}/exec", 
+        path: "/containers/#{id}/exec",
         headers: HTTP::Headers{"Content-Type" => "application/json"},
         body: "{  \"AttachStdin\" : false,
                   \"AttachStdout\" : true,
@@ -80,9 +80,9 @@ module Docker
                   \"Cmd\" : #{commands.to_a.to_s}
                 }")
         )
-      
-      exec_id = JSON.parse(response.body)["Id"] 
-      
+
+      exec_id = JSON.parse(response.body)["Id"]
+
       handle_response (result = Docker.client.post(
         "/exec/#{exec_id}/start",
         headers: HTTP::Headers{"Content-Type" => "application/json"},
